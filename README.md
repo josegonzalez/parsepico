@@ -183,6 +183,18 @@ Soon enough ...
   }
   ```
 
+- **`metadata.json`**
+  A small JSON file with cart-level metadata: a `cartName` read from the first `-- ` comment line of the cart's `__lua__` section (falling back to the `.p8` filename without extension).
+
+  Example (`metadata.json`):
+  ```json
+  {
+    "version": "1.0",
+    "description": "PICO-8 cart metadata",
+    "cartName": "celeste"
+  }
+  ```
+
 ## Expected Output
 
 ```bash
@@ -199,6 +211,18 @@ Spritesheet:
 Individual sprites:
 
 ![sprites](./images/sprites.png)
+
+## Use as a library
+
+The extraction logic is available as an importable package:
+
+```go
+import "github.com/josegonzalez/parsepico/pico8"
+
+err := pico8.Extract("celeste.p8", "out", pico8.Options{})
+```
+
+`Extract` parses the `.p8` cart and writes all outputs (sprites, `spritesheet.png`/`spritesheet.json`, `map.png`/`map.json`, and `metadata.json`) into the given output directory. `Options` mirrors the CLI flags (`UseSection3`, `UseSection4`, `Clean`).
 
 ## License
 
