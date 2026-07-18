@@ -62,9 +62,10 @@ func TestGenerateMetadataJSON(t *testing.T) {
 	}
 }
 
-func TestExtract(t *testing.T) {
-	dir := t.TempDir()
-
+// sampleCartPath writes a minimal cart (titled "test cart", 8 gfx rows) and
+// returns its path.
+func sampleCartPath(t *testing.T) string {
+	t.Helper()
 	var sb strings.Builder
 	sb.WriteString("pico-8 cartridge // http://www.pico-8.com\n")
 	sb.WriteString("version 42\n")
@@ -74,15 +75,17 @@ func TestExtract(t *testing.T) {
 	for i := 0; i < 8; i++ {
 		sb.WriteString(gfxLine + "\n")
 	}
-	cartPath := writeTempCart(t, "mycart.p8", sb.String())
+	return writeTempCart(t, "mycart.p8", sb.String())
+}
 
-	outDir := filepath.Join(dir, "out")
-	if err := Extract(cartPath, outDir, Options{}); err != nil {
+func TestExtract(t *testing.T) {
+	outDir := filepath.Join(t.TempDir(), "out")
+	if err := Extract(sampleCartPath(t), outDir, Options{}); err != nil {
 		t.Fatalf("Extract: %v", err)
 	}
 
 	// metadata.json carries the cart name from the __lua__ header.
-	data, err := os.ReadFile(filepath.Join(outDir, "metadata.json"))
+	data, err := os.ReadFile(filepath.Join(outDir, fileMetadataJSON))
 	if err != nil {
 		t.Fatalf("reading metadata.json: %v", err)
 	}
@@ -95,12 +98,30 @@ func TestExtract(t *testing.T) {
 	}
 
 	// The expected output files were produced.
-	for _, f := range []string{"spritesheet.json", "spritesheet.png", "metadata.json"} {
+	for _, f := range []string{fileSpritesheetJSON, fileSpritesheetPNG, fileMetadataJSON} {
 		if _, err := os.Stat(filepath.Join(outDir, f)); err != nil {
 			t.Errorf("missing %s: %v", f, err)
 		}
 	}
 	if _, err := os.Stat(filepath.Join(outDir, "sprites", "sprite_000.png")); err != nil {
 		t.Errorf("missing sprites/sprite_000.png: %v", err)
+	}
+}
+
+func TestExtractOnly(t *testing.T) {
+	outDir := filepath.Join(t.TempDir(), "out")
+	if err := Extract(sampleCartPath(t), outDir, Options{Only: []string{OutputMetadata}}); err != nil {
+		t.Fatalf("Extract: %v", err)
+	}
+
+	// The selected category is produced.
+	if _, err := os.Stat(filepath.Join(outDir, fileMetadataJSON)); err != nil {
+		t.Errorf("metadata.json missing: %v", err)
+	}
+	// Unselected categories are not produced at all.
+	for _, f := range []string{fileSpritesheetJSON, fileSpritesheetPNG, "sprites"} {
+		if _, err := os.Stat(filepath.Join(outDir, f)); !os.IsNotExist(err) {
+			t.Errorf("%s should not exist (err=%v)", f, err)
+		}
 	}
 }

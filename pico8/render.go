@@ -1,7 +1,6 @@
 package pico8
 
 import (
-	"encoding/json"
 	"fmt"
 	"image"
 	"image/color"
@@ -268,26 +267,16 @@ func combineSectionsIntoSpriteSheet(outDir string, numSections int) error {
 		}
 	}
 
-	if err := saveAsPng(combined, filepath.Join(outDir, "spritesheet.png")); err != nil {
-		return fmt.Errorf("failed to save spritesheet.png: %w", err)
+	if err := saveAsPng(combined, filepath.Join(outDir, fileSpritesheetPNG)); err != nil {
+		return fmt.Errorf("failed to save %s: %w", fileSpritesheetPNG, err)
 	}
 
 	return nil
 }
 
-// createIndividualSpritePNGs creates a PNG for each sprite described by
-// outDir/spritesheet.json, writing them into outDir/sprites.
-func createIndividualSpritePNGs(outDir string) error {
-	data, err := os.ReadFile(filepath.Join(outDir, "spritesheet.json"))
-	if err != nil {
-		return fmt.Errorf("error reading JSON file: %w", err)
-	}
-
-	var spriteSheet SpriteSheet
-	if err := json.Unmarshal(data, &spriteSheet); err != nil {
-		return fmt.Errorf("error unmarshaling JSON: %w", err)
-	}
-
+// createIndividualSpritePNGs creates a PNG for each sprite in spriteSheet,
+// writing them into outDir/sprites.
+func createIndividualSpritePNGs(spriteSheet *SpriteSheet, outDir string) error {
 	spritesDir := filepath.Join(outDir, "sprites")
 	if err := os.MkdirAll(spritesDir, 0755); err != nil {
 		return fmt.Errorf("error creating sprites directory: %w", err)
